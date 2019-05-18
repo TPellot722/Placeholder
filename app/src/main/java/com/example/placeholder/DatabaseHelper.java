@@ -6,7 +6,11 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
-   public class DatabaseHelper extends SQLiteOpenHelper {
+import com.example.placeholder.Database.Order;
+import com.example.placeholder.Database.User;
+import com.example.placeholder.Database.Details;
+
+public class DatabaseHelper extends SQLiteOpenHelper {
         //information of database
         private static final String DATABASE_NAME = "Placeholder.db";
 
@@ -120,7 +124,7 @@ import android.database.sqlite.SQLiteOpenHelper;
        }
 
        //ORDERS DETAILS TABLE
-       public String loadOrderDetails() {
+       public String loadDetails() {
 
            String result = "";
            String query = "Select*FROM " + TABLE_NAME3;
@@ -137,42 +141,102 @@ import android.database.sqlite.SQLiteOpenHelper;
            return result;
        }
 
+       //ADD VALUES TO USER TABLE
         //we must use the ContentValues object with the put() method that is used to assign data to ContentsValues object
         //and then use insert() method of SQLiteDatabase object to insert data to the database
        //parameter is new customer object
-        public void addHandler(Customer customer) {
+        public void addUser(User user) {
 
             ContentValues values = new ContentValues();
-            values.put(COLUMN_NAME, customer.getName());
-            values.put(COLUMN_EMAIL, customer.getEmail());
-            values.put(COLUMN_PASSWORD, customer.getPassword());
+            values.put(COLUMN_UID, user.getuID());
+            values.put(COLUMN_EMAIL, user.getEmail());
             SQLiteDatabase db = this.getWritableDatabase();
             db.insert(TABLE_NAME1, null, values);
             db.close();
         }
 
+        //ADD VALUES TO ORDERS TABLE
+       public void addOrder(Order order) {
+
+           ContentValues values = new ContentValues();
+           values.put(COLUMN_ORDERID, order.getOrderID());
+           values.put(COLUMN_UID2, order.getuID());
+           SQLiteDatabase db = this.getWritableDatabase();
+           db.insert(TABLE_NAME2, null, values);
+           db.close();
+       }
+
+       //ADD VALUES TO ORDERDETAILS TABLE
+       public void addDetails(Details details) {
+
+           ContentValues values = new ContentValues();
+           values.put(COLUMN_ORDERID2, details.getOrderID());
+           values.put(COLUMN_ITEM, details.getItemName());
+           values.put(COLUMN_PRICE, details.getPrice());
+           SQLiteDatabase db = this.getWritableDatabase();
+           db.insert(TABLE_NAME3, null, values);
+           db.close();
+       }
+
 
         //finds information in the database by condition
        //parameter is the email/username
        //method returns the customer object linked to that email/username
-       public Customer findHandler(String cEmail) {
-           String query = "Select * FROM " + TABLE_NAME1 + " WHERE " + COLUMN_EMAIL + " = " + "'" + cEmail + "'";
+
+    //FIND USER
+       public User findUser(String email) {
+           String query = "Select * FROM " + TABLE_NAME1 + " WHERE " + COLUMN_EMAIL + " = " + "'" + email + "'";
            SQLiteDatabase db = this.getWritableDatabase();
            Cursor cursor = db.rawQuery(query, null);
-           Customer customer = new Customer();
+           User user = new User();
            if (cursor.moveToFirst()) {
                cursor.moveToFirst();
-               customer.setName(cursor.getString(1));
-               customer.setEmail(cursor.getString(2));
-               customer.setPassword(cursor.getString(3));
+               user.setuID(cursor.getString(0));
+               user.setEmail(cursor.getString(1));
                cursor.close();
            } else {
-               customer = null;
+               user = null;
            }
            db.close();
-           return customer;
+           return user;
        }
 
+       //FIND ORDER
+        public Order findOrder(String uid) {
+            String query = "Select * FROM " + TABLE_NAME2 + " WHERE " + COLUMN_UID2 + " = " + "'" + uid + "'";
+            SQLiteDatabase db = this.getWritableDatabase();
+            Cursor cursor = db.rawQuery(query, null);
+            Order order = new Order();
+            if (cursor.moveToFirst()) {
+                cursor.moveToFirst();
+                order.setOrderID(cursor.getInt(0));
+                order.setuID(cursor.getString(1));
+                cursor.close();
+            } else {
+                order = null;
+            }
+            db.close();
+            return order;
+        }
+
+        //FIND DETAILS
+        public Details findDetails(int orderid) {
+            String query = "Select * FROM " + TABLE_NAME3 + " WHERE " + COLUMN_ORDERID2 + " = " + "'" + orderid + "'";
+            SQLiteDatabase db = this.getWritableDatabase();
+            Cursor cursor = db.rawQuery(query, null);
+            Details details = new Details();
+            if (cursor.moveToFirst()) {
+                cursor.moveToFirst();
+                details.setOrderID(cursor.getInt(0));
+                details.setItemName(cursor.getString(1));
+                details.setPrice(cursor.getDouble(2));
+                cursor.close();
+            } else {
+                details = null;
+            }
+            db.close();
+            return details;
+        }
 
 
        //deletes a record by condition
@@ -180,18 +244,18 @@ import android.database.sqlite.SQLiteOpenHelper;
        //We will save the result that is returned from the implementation of the rawQuery() method
        //of the SQLiteDatabase object into a Cursor object and find the matching result in this object.
        // In the final step, we use the delete() method of the SQLiteDatabase object to delete the record
-        public boolean deleteHandler(String name) {
+        public boolean deleteUser(String email) {
 
             boolean result = false;
-            String query = "Select*FROM " + TABLE_NAME1 + " WHERE " + COLUMN_NAME + "= '" + name + "'";
+            String query = "Select*FROM " + TABLE_NAME1 + " WHERE " + COLUMN_EMAIL + "= '" + email + "'";
             SQLiteDatabase db = this.getWritableDatabase();
             Cursor cursor = db.rawQuery(query, null);
-            Customer customer = new Customer();
+            User user = new User();
             if (cursor.moveToFirst()) {
-                customer.setName(cursor.getString(1));
-                db.delete(TABLE_NAME1, COLUMN_NAME + "=?",
+                user.setEmail(cursor.getString(1));
+                db.delete(TABLE_NAME1, COLUMN_EMAIL + "=?",
                         new String[] {
-                    String.valueOf(customer.getName())
+                    String.valueOf(user.getEmail())
                 });
                 cursor.close();
                 result = true;
@@ -200,17 +264,74 @@ import android.database.sqlite.SQLiteOpenHelper;
             return result;
         }
 
+        public boolean deleteOrder(String uid) {
+
+            boolean result = false;
+            String query = "Select*FROM " + TABLE_NAME2 + " WHERE " + COLUMN_UID2 + "= '" + uid + "'";
+            SQLiteDatabase db = this.getWritableDatabase();
+            Cursor cursor = db.rawQuery(query, null);
+            Order order = new Order();
+            if (cursor.moveToFirst()) {
+                order.setuID(cursor.getString(1));
+                db.delete(TABLE_NAME2, COLUMN_UID2 + "=?",
+                    new String[] {
+                            String.valueOf(order.getuID())
+                    });
+            cursor.close();
+            result = true;
+            }
+            db.close();
+            return result;
+        }
+
+        public boolean deleteDetails(int orderid) {
+
+            boolean result = false;
+            String query = "Select*FROM " + TABLE_NAME3 + " WHERE " + COLUMN_ORDERID2 + "= '" + orderid + "'";
+            SQLiteDatabase db = this.getWritableDatabase();
+            Cursor cursor = db.rawQuery(query, null);
+            Details details = new Details();
+            if (cursor.moveToFirst()) {
+                details.setOrderID(cursor.getInt(0));
+                db.delete(TABLE_NAME3, COLUMN_ORDERID2 + "=?",
+                    new String[] {
+                            String.valueOf(details.getOrderID())
+                    });
+                cursor.close();
+                result = true;
+            }
+            db.close();
+            return result;
+        }
+
+
         //updates the information in a record
        //we can use the ContentValues object and the update() method of the SQLiteDatabase object
-        public boolean updateHandler(String name, String email, String password) {
+        public boolean updateUser(String uid, String email) {
             SQLiteDatabase db = this.getWritableDatabase();
             ContentValues args = new ContentValues();
-            //args.put(COLUMN_CUSTOMERID, ID);
-            args.put(COLUMN_NAME, name);
+            args.put(COLUMN_UID, uid);
             args.put(COLUMN_EMAIL, email);
-            args.put(COLUMN_PASSWORD, password);
 
-            return db.update(TABLE_NAME1, args, COLUMN_NAME + "='" + name + "'", null) > 0;
+            return db.update(TABLE_NAME1, args, COLUMN_UID + "='" + uid + "'", null) > 0;
+        }
+
+        public boolean updateOrder(int orderID, String uid) {
+            SQLiteDatabase db = this.getWritableDatabase();
+            ContentValues args = new ContentValues();
+            args.put(COLUMN_ORDERID, orderID);
+            args.put(COLUMN_UID2, uid);
+
+            return db.update(TABLE_NAME2, args, COLUMN_ORDERID + "='" + orderID + "'", null) > 0;
+        }
+        public boolean updateDetails(int orderID, String item, double price) {
+            SQLiteDatabase db = this.getWritableDatabase();
+            ContentValues args = new ContentValues();
+            args.put(COLUMN_ORDERID2, orderID);
+            args.put(COLUMN_ITEM, item);
+            args.put(COLUMN_PRICE, price);
+
+            return db.update(TABLE_NAME3, args, COLUMN_ORDERID2 + "='" + orderID + "'", null) > 0;
         }
     }
 
